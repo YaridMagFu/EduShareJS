@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { View, TextInput, Button, Alert } from 'react-native';
+import { View, TextInput, Button, Alert, StyleSheet } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { setDoc, doc } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 
@@ -21,6 +21,7 @@ export default function RegisterScreen({ route, navigation }) {
       }
 
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      await updateProfile(userCredential.user, { displayName: name });
       await setDoc(doc(db, 'users', userCredential.user.uid), {
         name,
         email,
@@ -35,18 +36,22 @@ export default function RegisterScreen({ route, navigation }) {
   };
 
   return (
-    <View>
+    <View style={styles.container}>
       <TextInput
+        style={styles.input}
         placeholder="Nombre"
         value={name}
         onChangeText={setName}
       />
       <TextInput
+        style={styles.input}
         placeholder="Email"
         value={email}
         onChangeText={setEmail}
+        keyboardType="email-address"
       />
       <TextInput
+        style={styles.input}
         placeholder="Contraseña"
         value={password}
         onChangeText={setPassword}
@@ -56,7 +61,9 @@ export default function RegisterScreen({ route, navigation }) {
         <Picker
           selectedValue={year}
           onValueChange={(itemValue) => setYear(itemValue)}
+          style={styles.picker}
         >
+          <Picker.Item label="Selecciona el año" value="" />
           <Picker.Item label="1 año" value="1" />
           <Picker.Item label="2 año" value="2" />
           <Picker.Item label="3 año" value="3" />
@@ -64,6 +71,7 @@ export default function RegisterScreen({ route, navigation }) {
       )}
       {role === 'docente' && (
         <TextInput
+          style={styles.input}
           placeholder="Código de docente"
           value={code}
           onChangeText={setCode}
@@ -73,3 +81,22 @@ export default function RegisterScreen({ route, navigation }) {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 20,
+    justifyContent: 'center',
+  },
+  input: {
+    height: 40,
+    borderColor: 'gray',
+    borderWidth: 1,
+    marginBottom: 10,
+    paddingHorizontal: 10,
+  },
+  picker: {
+    height: 50,
+    marginBottom: 10,
+  },
+});
