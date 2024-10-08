@@ -11,15 +11,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 40,
+    paddingHorizontal: 20,
     borderBottomLeftRadius: 40,
     borderBottomRightRadius: 10,
     marginTop: 30
+  },
+  backButton: {
+    padding: 10,
   },
   menuButton: {
     backgroundColor: '#B9CAED',
     padding: 10,
     borderRadius: 10,
+  },
+  menuButtonText: {
+    fontSize: 30,
   },
   title: {
     color: 'black',
@@ -45,26 +51,26 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    justifyContent: 'flex-start', 
-    alignItems: 'flex-start', 
+    justifyContent: 'flex-start',
+    alignItems: 'flex-start',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalMenu: {
     backgroundColor: 'white',
     padding: 20,
     borderRadius: 10,
-    alignItems: 'flex-start', 
+    alignItems: 'flex-start',
     width: '70%',
   },
   menuItem: {
-    flexDirection: 'row', 
+    flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 10,
   },
   menuItemText: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginLeft: 10, 
+    marginLeft: 10,
   },
   divider: {
     height: 1,
@@ -73,44 +79,44 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
   closeButton: {
-    backgroundColor: '#B9CAED', 
+    backgroundColor: '#B9CAED',
     padding: 15,
     borderRadius: 10,
     alignItems: 'center',
-    marginTop: 20, 
-    width: '100%', 
+    marginTop: 20,
+    width: '100%',
   },
   closeButtonText: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#000', 
+    color: '#000',
   },
   chatContainer: {
-    flex: 1, 
+    flex: 1,
     justifyContent: 'flex-end',
-    paddingBottom: 10, 
+    paddingBottom: 10,
   },
   loadingIndicator: {
     marginVertical: 20,
     alignSelf: 'center',
   },
   messagesBox: {
-    flex: 1, 
-    backgroundColor: '#B9CAED', 
-    borderRadius: 30, // Esquinas redondeadas
-    borderWidth: 1, // Borde del cuadro
-    borderColor: 'black', // Color del borde
-    shadowColor: '#000', // Sombra
+    flex: 1,
+    backgroundColor: '#B9CAED',
+    borderRadius: 30,
+    borderWidth: 1,
+    borderColor: 'black',
+    shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: 1,
     },
     shadowOpacity: 0.2,
     shadowRadius: 2,
-    elevation: 2, 
-    padding: 10, 
-    marginBottom: 5, 
-    marginTop: 20, 
+    elevation: 2,
+    padding: 10,
+    marginBottom: 5,
+    marginTop: 20,
   },
 });
 

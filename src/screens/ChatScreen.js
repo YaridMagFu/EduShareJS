@@ -12,20 +12,20 @@ export default function ChatScreen({ route, navigation }) {
   const [newMessage, setNewMessage] = useState('');
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuAnimation] = useState(new Animated.Value(0));
-  const [loading, setLoading] = useState(true); 
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const q = query(collection(db, `chats/${chatRoom}/messages`), orderBy('createdAt', 'desc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setMessages(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-      setLoading(false); 
+      setLoading(false);
     });
     return unsubscribe;
   }, [chatRoom]);
 
   const sendMessage = async () => {
     if (newMessage.trim() === '') return;
-    console.log("Enviando mensaje:", newMessage); 
+    console.log("Enviando mensaje:", newMessage);
     const { uid } = auth.currentUser;
     const displayName = auth.currentUser.displayName || 'Usuario Anónimo';
     await addDoc(collection(db, `chats/${chatRoom}/messages`), {
@@ -47,27 +47,34 @@ export default function ChatScreen({ route, navigation }) {
     }).start();
   };
 
-  const closeMenu = () => {
+  const closeMenu = (callback) => {
     Animated.timing(menuAnimation, {
       toValue: 0,
       duration: 300,
       useNativeDriver: true,
       easing: Easing.ease,
-    }).start(() => setMenuVisible(false));
+    }).start(() => {
+      setMenuVisible(false);
+      if (callback) callback();
+    });
   };
 
   const handleLogout = () => {
-    auth.signOut()
-      .then(() => {
-        console.log('Sesión cerrada');
-        navigation.navigate('Login'); 
-      })
-      .catch((error) => {
-        console.error('Error al cerrar sesión: ', error);
-      });
+    closeMenu(() => {
+      auth.signOut()
+        .then(() => {
+          console.log('Sesión cerrada');
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Login' }],
+          });
+        })
+        .catch((error) => {
+          console.error('Error al cerrar sesión: ', error);
+        });
+    });
   };
 
-  
   const menuOpacity = menuAnimation.interpolate({
     inputRange: [0, 1],
     outputRange: [0, 1],
@@ -84,17 +91,17 @@ export default function ChatScreen({ route, navigation }) {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
     >
-
       <View style={styles.topBar}>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+          <Icon name="arrow-back" size={24} color="#000" />
+        </TouchableOpacity>
+        <Text style={styles.title}>EDUSHARE.JS</Text>
         <TouchableOpacity style={styles.menuButton} onPress={openMenu}>
           <Text style={[styles.menuButtonText, { fontSize: 30 }]}>☰</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>EDUSHARE.JS</Text>
       </View>
 
-      {/* Contenedor para mantener el input y la lista en la parte inferior */}
       <View style={styles.chatContainer}>
-        {/* Indicador de Carga */}
         {loading ? (
           <ActivityIndicator size="large" color="#0000ff" style={styles.loadingIndicator} />
         ) : null}
@@ -126,20 +133,18 @@ export default function ChatScreen({ route, navigation }) {
         </View>
       </View>
 
-      {/* Menú */}
       <Modal
         transparent={true}
         visible={menuVisible}
-        onRequestClose={closeMenu}
-        animationType="fade"
+        onRequestClose={() => closeMenu()}
+        animationType="none"
       >
         <View style={styles.modalOverlay}>
           <Animated.View style={[styles.modalMenu, { opacity: menuOpacity, transform: [{ scale: menuScale }] }]}>
             <TouchableOpacity
               style={styles.menuItem}
               onPress={() => {
-                closeMenu();
-                navigation.navigate('Profile');
+                closeMenu(() => navigation.navigate('Profile'));
               }}
             >
               <Icon name="person" size={24} color="#000" />
@@ -149,8 +154,7 @@ export default function ChatScreen({ route, navigation }) {
             <TouchableOpacity
               style={styles.menuItem}
               onPress={() => {
-                closeMenu();
-                navigation.navigate('Files');
+                closeMenu(() => navigation.navigate('Files'));
               }}
             >
               <Icon name="folder" size={24} color="#000" />
@@ -162,7 +166,7 @@ export default function ChatScreen({ route, navigation }) {
               <Text style={styles.menuItemText}>Cerrar sesión</Text>
             </TouchableOpacity>
             <View style={styles.divider} />
-            <TouchableOpacity style={styles.closeButton} onPress={closeMenu}>
+            <TouchableOpacity style={styles.closeButton} onPress={() => closeMenu()}>
               <Text style={styles.closeButtonText}>Cerrar Menú</Text>
             </TouchableOpacity>
           </Animated.View>

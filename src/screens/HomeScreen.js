@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { View, TouchableOpacity, Text, Modal, Animated, Easing, ActivityIndicator } from 'react-native';
+import { View, TouchableOpacity, Text, Modal, Animated, Easing, ActivityIndicator, Alert } from 'react-native';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebase';
 import { getUserPermissions } from '../utils/permissions';
 import ChatRoom from '../components/ChatRoom';
 import styles from './HomeScreenStyles'; 
 import Icon from 'react-native-vector-icons/Ionicons'; 
+import NetInfo from "@react-native-community/netinfo";
 
 const chatNames = {
   global: 'Chat Global',
@@ -19,25 +20,50 @@ export default function HomeScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuAnimation] = useState(new Animated.Value(0));
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
     const fetchPermissions = async () => {
-      const permissions = await getUserPermissions();
-      setChatRooms(permissions);
-      setLoading(false);
+      try {
+        const netInfo = await NetInfo.fetch();
+        if (!netInfo.isConnected) {
+          throw new Error('No hay conexión a internet');
+        }
+        const permissions = await getUserPermissions();
+        setChatRooms(permissions);
+      } catch (error) {
+        console.error('Error al obtener permisos:', error);
+        Alert.alert('Error', 'No se pudieron cargar los chats. Por favor, inténtelo de nuevo más tarde.');
+      } finally {
+        setLoading(false);
+      }
     };
     fetchPermissions();
   }, []);
 
   const handleLogout = async () => {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
     try {
+      const netInfo = await NetInfo.fetch();
+      if (!netInfo.isConnected) {
+        throw new Error('No hay conexión a internet');
+      }
       await signOut(auth);
       closeMenu();
-      setTimeout(() => {
-        navigation.navigate('Login');
-      }, 300);
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      });
     } catch (error) {
       console.error('Error al cerrar sesión:', error);
+      let errorMessage = 'Ocurrió un error al cerrar sesión. Por favor, inténtelo de nuevo.';
+      if (error.message === 'No hay conexión a internet') {
+        errorMessage = 'No hay conexión a internet. Por favor, verifique su conexión e inténtelo de nuevo.';
+      }
+      Alert.alert('Error al cerrar sesión', errorMessage);
+    } finally {
+      setIsLoggingOut(false);
     }
   };
 
@@ -51,13 +77,16 @@ export default function HomeScreen({ navigation }) {
     }).start();
   };
 
-  const closeMenu = () => {
+  const closeMenu = (callback) => {
     Animated.timing(menuAnimation, {
       toValue: 0,
       duration: 300,
       useNativeDriver: true,
       easing: Easing.ease,
-    }).start(() => setMenuVisible(false));
+    }).start(() => {
+      setMenuVisible(false);
+      if (callback) callback();
+    });
   };
 
   const menuOpacity = menuAnimation.interpolate({
@@ -97,16 +126,15 @@ export default function HomeScreen({ navigation }) {
       <Modal
         transparent={true}
         visible={menuVisible}
-        onRequestClose={closeMenu}
-        animationType="fade"
+        onRequestClose={() => closeMenu()}
+        animationType="none"
       >
         <View style={styles.modalOverlay}>
           <Animated.View style={[styles.modalMenu, { opacity: menuOpacity, transform: [{ scale: menuScale }] }]}>
             <TouchableOpacity
               style={styles.menuItem}
               onPress={() => {
-                closeMenu();
-                navigation.navigate('Profile');
+                closeMenu(() => navigation.navigate('Profile'));
               }}
             >
               <Icon name="person" size={24} color="#000" />
@@ -116,21 +144,25 @@ export default function HomeScreen({ navigation }) {
             <TouchableOpacity
               style={styles.menuItem}
               onPress={() => {
-                closeMenu();
-                navigation.navigate('Files');
+                closeMenu(() => navigation.navigate('Files'));
               }}
             >
               <Icon name="folder" size={24} color="#000" />
               <Text style={styles.menuItemText}>Archivos</Text>
             </TouchableOpacity>
             <View style={styles.divider} />
-            <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
+            <TouchableOpacity 
+              style={styles.menuItem} 
+              onPress={handleLogout}
+              disabled={isLoggingOut}
+            >
               <Icon name="log-out" size={24} color="#000" />
-              <Text style={styles.menuItemText}>Cerrar sesión</Text>
+              <Text style={styles.menuItemText}>
+                {isLoggingOut ? 'Cerrando sesión...' : 'Cerrar sesión'}
+              </Text>
             </TouchableOpacity>
             <View style={styles.divider} />
-
-            <TouchableOpacity style={styles.closeButton} onPress={closeMenu}>
+            <TouchableOpacity style={styles.closeButton} onPress={() => closeMenu()}>
               <Text style={styles.closeButtonText}>Cerrar Menú</Text>
             </TouchableOpacity>
           </Animated.View>
