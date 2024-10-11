@@ -1,58 +1,186 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Alert } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, Button, Alert, FlatList, Linking, TextInput, Modal, Image, TouchableOpacity } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
-import { getStorage, ref, uploadBytes, listAll, getDownloadURL } from 'firebase/storage';
-import { auth } from '../firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { doc, setDoc, collection, getDocs, getDoc } from 'firebase/firestore';
+import { auth, storage, db } from '../firebase';
+import styles from './FileScreenStyles';
 
-export default function FilesScreen() {
+const FilesScreen = () => {
   const [files, setFiles] = useState([]);
+  const [description, setDescription] = useState('');
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isDocente, setIsDocente] = useState(false);
 
   useEffect(() => {
+    const user = auth.currentUser;
+    setCurrentUser(user);
+
+    const fetchUserRole = async () => {
+      if (user) {
+        const userDocRef = doc(db, 'users', user.uid);
+        const userDoc = await getDoc(userDocRef);
+
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          setIsDocente(userData.role === 'docente');
+        } else {
+          console.log('El documento no existe');
+        }
+      }
+    };
+
+    fetchUserRole();
+  }, []);
+
+  useEffect(() => {
+    const fetchFiles = async () => {
+      const filesCollection = collection(db, 'files');
+      const filesSnapshot = await getDocs(filesCollection);
+      const filesList = filesSnapshot.docs.map(doc => doc.data());
+      setFiles(filesList);
+    };
+
     fetchFiles();
   }, []);
 
-  const fetchFiles = async () => {
-    const storage = getStorage();
-    const listRef = ref(storage, `files/${auth.currentUser.uid}`);
-    const res = await listAll(listRef);
-    const filesData = await Promise.all(
-      res.items.map(async (itemRef) => {
-        const url = await getDownloadURL(itemRef);
-        return { name: itemRef.name, url };
-      })
-    );
-    setFiles(filesData);
-  };
+  const handleDocumentSelection = async () => {
+    if (!isDocente) {
+      Alert.alert('Permiso denegado', 'Solo los docentes pueden subir archivos');
+      return;
+    }
 
-  const handleUpload = async () => {
     try {
-      const result = await DocumentPicker.getDocumentAsync();
-      if (result.type === 'success') {
-        const storage = getStorage();
-        const fileRef = ref(storage, `files/${auth.currentUser.uid}/${result.name}`);
-        const response = await fetch(result.uri);
-        const blob = await response.blob();
-        await uploadBytes(fileRef, blob);
-        Alert.alert('Éxito', 'Archivo subido correctamente');
-        fetchFiles();
+      const result = await DocumentPicker.getDocumentAsync({});
+      if (result.type === 'cancel') return;
+
+      const fileUri = result.assets[0].uri;
+      const fileName = result.assets[0].name;
+
+      if (!fileUri) {
+        Alert.alert('Error', 'No se pudo obtener la URI del archivo');
+        return;
       }
+
+      setSelectedFile({ uri: fileUri, name: fileName });
+      setIsModalVisible(true);
     } catch (error) {
-      Alert.alert('Error', 'No se pudo subir el archivo');
+      console.error('Error al seleccionar archivo:', error);
+      Alert.alert('Error', 'Hubo un problema al seleccionar el archivo');
     }
   };
 
+  const handleUpload = async () => {
+    if (!selectedFile) {
+      Alert.alert('Error', 'No se ha seleccionado ningún archivo');
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const response = await fetch(selectedFile.uri);
+      const fileBlob = await response.blob();
+      const fileRef = ref(storage, `files/${selectedFile.name}`);
+
+      await uploadBytes(fileRef, fileBlob);
+      const downloadURL = await getDownloadURL(fileRef);
+
+      const uploadedBy = currentUser ? currentUser.displayName || 'Usuario Anónimo' : 'Usuario Anónimo';
+
+      const fileDoc = {
+        name: selectedFile.name,
+        url: downloadURL,
+        description: description,
+        uploadedBy: uploadedBy,
+        createdAt: new Date(),
+      };
+
+      await setDoc(doc(db, 'files', selectedFile.name), fileDoc);
+      Alert.alert('Éxito', 'Archivo subido correctamente');
+
+      setFiles(prevFiles => [...prevFiles, fileDoc]);
+      setDescription('');
+      setSelectedFile(null);
+      setIsModalVisible(false);
+    } catch (error) {
+      console.error('Error al subir el archivo:', error);
+      Alert.alert('Error', 'Hubo un problema al subir el archivo');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const renderFilePreview = (item) => {
+    const isImage = item.name.endsWith('.png') || item.name.endsWith('.jpg') || item.name.endsWith('.jpeg');
+
+    return (
+      <View style={styles.card}>
+        <Text style={styles.description}>{item.description}</Text>
+        {isImage ? (
+          <Image source={{ uri: item.url }} style={styles.imagePreview} />
+        ) : (
+          <Text style={styles.fileName}>Vista previa no disponible para {item.name}</Text>
+        )}
+        <Text style={styles.uploadedBy}>Subido por: {item.uploadedBy}</Text>
+        <TouchableOpacity 
+          style={styles.openButton} 
+          onPress={() => Linking.openURL(item.url)}
+        >
+          <Text style={styles.openButtonText}>Abrir archivo</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
   return (
-    <View>
-      <Button title="Subir archivo" onPress={handleUpload} />
+    <View style={{ flex: 1, padding: 20 }}>
+      {/* Solo muestra el botón si el rol es docente */}
+      {isDocente && (
+        <Button title="Subir Archivo" onPress={handleDocumentSelection} disabled={isUploading} />
+      )}
       <FlatList
         data={files}
-        renderItem={({ item }) => (
-          <TouchableOpacity onPress={() => Linking.openURL(item.url)}>
-            <Text>{item.name}</Text>
-          </TouchableOpacity>
-        )}
         keyExtractor={(item) => item.name}
+        renderItem={({ item }) => renderFilePreview(item)}
       />
+
+      <Modal
+        visible={isModalVisible}
+        transparent={true}
+        animationType="slide"
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Selecciona un archivo y descripción</Text>
+            <TextInput
+              style={styles.descriptionInput}
+              placeholder="Escribe una descripción del archivo"
+              value={description}
+              onChangeText={setDescription}
+            />
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity 
+                style={styles.uploadButton} 
+                onPress={handleUpload} 
+                disabled={isUploading}
+              >
+                <Text style={styles.uploadButtonText}>Subir Archivo</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.cancelButton} 
+                onPress={() => setIsModalVisible(false)}
+              >
+                <Text style={styles.cancelButtonText}>Cancelar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
-}
+};
+
+export default FilesScreen;
