@@ -1,10 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { Text, View, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Modal, Animated, Easing, ActivityIndicator } from 'react-native';
-import { collection, addDoc, query, orderBy, onSnapshot, doc, onSnapshot as onUserSnapshot } from 'firebase/firestore'; // Importa onSnapshot
+import { collection, addDoc, query, orderBy, onSnapshot, doc, onSnapshot as onUserSnapshot } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import MessageItem from '../components/MessageItem';
 import Icon from 'react-native-vector-icons/Ionicons'; 
 import styles from './ChatScreenStyles';
+import Filter from 'bad-words-es'; 
+
+
+const salvadoranBadWords = [
+  "pendejos", "hijo de puta", "cabrón", "mierda", "verga", 
+  "chucho", "cagada", "picha", "culero", "pendejada", 
+  "coño", "maricón", "huevón", "fregón", "pichón", 
+  "asqueroso", "pedorro", "puto", "malparido","maje","CTM",""
+];
+
+const filter = new Filter();
+filter.addWords(...salvadoranBadWords); 
 
 export default function ChatScreen({ route, navigation }) {
   const { chatRoom } = route.params;
@@ -16,7 +28,6 @@ export default function ChatScreen({ route, navigation }) {
   const [displayName, setDisplayName] = useState(auth.currentUser.displayName || 'Usuario Anónimo');
 
   useEffect(() => {
-    // Escuchar cambios en el documento del usuario
     const unsubscribeUser = onUserSnapshot(doc(db, 'users', auth.currentUser.uid), (doc) => {
       if (doc.exists()) {
         setDisplayName(doc.data().name);
@@ -28,13 +39,12 @@ export default function ChatScreen({ route, navigation }) {
       const updatedMessages = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
-        displayName: doc.data().uid === auth.currentUser.uid ? displayName : doc.data().displayName // Asegúrate de usar el nombre actualizado
+        displayName: doc.data().uid === auth.currentUser.uid ? displayName : doc.data().displayName
       }));
       setMessages(updatedMessages);
       setLoading(false);
     });
 
-    // Cleanup
     return () => {
       unsubscribeUser();
       unsubscribeMessages();
@@ -43,10 +53,18 @@ export default function ChatScreen({ route, navigation }) {
 
   const sendMessage = async () => {
     if (newMessage.trim() === '') return;
-    console.log("Enviando mensaje:", newMessage);
+    
+    const cleanMessage = filter.clean(newMessage);
+    
+    if (cleanMessage.trim() === '') {
+      console.log("El mensaje contiene solo palabras prohibidas.");
+      return; 
+    }
+    
+    console.log("Enviando mensaje:", cleanMessage);
     const { uid } = auth.currentUser;
     await addDoc(collection(db, `chats/${chatRoom}/messages`), {
-      text: newMessage,
+      text: cleanMessage,
       createdAt: new Date(),
       uid,
       displayName,
