@@ -32,7 +32,7 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   openButton: {
-    backgroundColor: '#ff7f50',
+    backgroundColor: 'blue',
     padding: 10,
     borderRadius: 5,
     alignItems: 'center',
@@ -94,6 +94,18 @@ const styles = StyleSheet.create({
     color: 'white',
     textAlign: 'center',
   },
+  deleteButton: {
+    backgroundColor: '#FF4D4D',
+    padding: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  deleteButtonText: {
+    color: '#FFF',
+    fontWeight: 'bold',
+  },
+  
 });
 
 export default styles;

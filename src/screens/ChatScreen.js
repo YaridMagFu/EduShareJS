@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Text, View, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Modal, Animated, Easing, ActivityIndicator } from 'react-native';
-import { collection, addDoc, query, orderBy, onSnapshot } from 'firebase/firestore';
+import { collection, addDoc, query, orderBy, onSnapshot, doc, onSnapshot as onUserSnapshot } from 'firebase/firestore'; // Importa onSnapshot
 import { auth, db } from '../firebase';
 import MessageItem from '../components/MessageItem';
 import Icon from 'react-native-vector-icons/Ionicons'; 
@@ -13,21 +13,38 @@ export default function ChatScreen({ route, navigation }) {
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuAnimation] = useState(new Animated.Value(0));
   const [loading, setLoading] = useState(true);
+  const [displayName, setDisplayName] = useState(auth.currentUser.displayName || 'Usuario Anónimo');
 
   useEffect(() => {
+    // Escuchar cambios en el documento del usuario
+    const unsubscribeUser = onUserSnapshot(doc(db, 'users', auth.currentUser.uid), (doc) => {
+      if (doc.exists()) {
+        setDisplayName(doc.data().name);
+      }
+    });
+
     const q = query(collection(db, `chats/${chatRoom}/messages`), orderBy('createdAt', 'desc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      setMessages(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    const unsubscribeMessages = onSnapshot(q, (snapshot) => {
+      const updatedMessages = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        displayName: doc.data().uid === auth.currentUser.uid ? displayName : doc.data().displayName // Asegúrate de usar el nombre actualizado
+      }));
+      setMessages(updatedMessages);
       setLoading(false);
     });
-    return unsubscribe;
-  }, [chatRoom]);
+
+    // Cleanup
+    return () => {
+      unsubscribeUser();
+      unsubscribeMessages();
+    };
+  }, [chatRoom, displayName]);
 
   const sendMessage = async () => {
     if (newMessage.trim() === '') return;
     console.log("Enviando mensaje:", newMessage);
     const { uid } = auth.currentUser;
-    const displayName = auth.currentUser.displayName || 'Usuario Anónimo';
     await addDoc(collection(db, `chats/${chatRoom}/messages`), {
       text: newMessage,
       createdAt: new Date(),

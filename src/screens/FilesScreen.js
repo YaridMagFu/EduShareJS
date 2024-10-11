@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Button, Alert, FlatList, Linking, TextInput, Modal, Image, TouchableOpacity } from 'react-native';
+import { View, Text, Button, Alert, FlatList, Linking, TextInput, Modal, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { doc, setDoc, collection, getDocs, getDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { doc, setDoc, collection, getDocs, getDoc, deleteDoc } from 'firebase/firestore';
 import { auth, storage, db } from '../firebase';
 import styles from './FileScreenStyles';
 
@@ -113,9 +113,42 @@ const FilesScreen = () => {
     }
   };
 
+  const deleteFile = async (file) => {
+    try {
+      // Elimina el archivo de Firebase Storage
+      const fileRef = ref(storage, `files/${file.name}`);
+      await deleteObject(fileRef);
+
+      // Elimina la referencia del archivo en Firestore
+      await deleteDoc(doc(db, 'files', file.name));
+
+      // Actualiza el estado local para eliminar el archivo de la lista
+      setFiles(prevFiles => prevFiles.filter(item => item.name !== file.name));
+
+      Alert.alert('Éxito', 'Archivo eliminado correctamente');
+    } catch (error) {
+      console.error('Error al eliminar el archivo:', error);
+      Alert.alert('Error', 'Hubo un problema al eliminar el archivo');
+    }
+  };
+
   const renderFilePreview = (item) => {
     const isImage = item.name.endsWith('.png') || item.name.endsWith('.jpg') || item.name.endsWith('.jpeg');
-
+  
+    const handleDelete = async () => {
+      Alert.alert(
+        'Confirmación',
+        '¿Estás seguro de que deseas eliminar este archivo?',
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          {
+            text: 'Eliminar',
+            onPress: () => deleteFile(item),
+          },
+        ]
+      );
+    };
+  
     return (
       <View style={styles.card}>
         <Text style={styles.description}>{item.description}</Text>
@@ -131,6 +164,16 @@ const FilesScreen = () => {
         >
           <Text style={styles.openButtonText}>Abrir archivo</Text>
         </TouchableOpacity>
+  
+        {/* Mostrar el botón de eliminar solo si el usuario es docente */}
+        {isDocente && (
+          <TouchableOpacity 
+            style={styles.deleteButton} 
+            onPress={handleDelete}
+          >
+            <Text style={styles.deleteButtonText}>Eliminar</Text>
+          </TouchableOpacity>
+        )}
       </View>
     );
   };
@@ -154,7 +197,7 @@ const FilesScreen = () => {
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Selecciona un archivo y descripción</Text>
+            <Text style={styles.modalTitle}>Descripción</Text>
             <TextInput
               style={styles.descriptionInput}
               placeholder="Escribe una descripción del archivo"
@@ -167,7 +210,11 @@ const FilesScreen = () => {
                 onPress={handleUpload} 
                 disabled={isUploading}
               >
-                <Text style={styles.uploadButtonText}>Subir Archivo</Text>
+                {isUploading ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.uploadButtonText}>Subir Archivo</Text>
+                )}
               </TouchableOpacity>
               <TouchableOpacity 
                 style={styles.cancelButton} 
