@@ -112,17 +112,17 @@ const FilesScreen = () => {
       setIsUploading(false);
     }
   };
-
+  // crud
   const deleteFile = async (file) => {
     try {
-      // Elimina el archivo de Firebase Storage
+  
       const fileRef = ref(storage, `files/${file.name}`);
       await deleteObject(fileRef);
 
-      // Elimina la referencia del archivo en Firestore
+      
       await deleteDoc(doc(db, 'files', file.name));
 
-      // Actualiza el estado local para eliminar el archivo de la lista
+
       setFiles(prevFiles => prevFiles.filter(item => item.name !== file.name));
 
       Alert.alert('Éxito', 'Archivo eliminado correctamente');
@@ -165,7 +165,7 @@ const FilesScreen = () => {
           <Text style={styles.openButtonText}>Abrir archivo</Text>
         </TouchableOpacity>
   
-        {/* Mostrar el botón de eliminar solo si el usuario es docente */}
+       {/* boton eliminar solo si es maestro */}
         {isDocente && (
           <TouchableOpacity 
             style={styles.deleteButton} 
@@ -180,7 +180,6 @@ const FilesScreen = () => {
 
   return (
     <View style={{ flex: 1, padding: 20 }}>
-      {/* Solo muestra el botón si el rol es docente */}
       {isDocente && (
         <Button title="Subir Archivo" onPress={handleDocumentSelection} disabled={isUploading} />
       )}
@@ -190,42 +189,43 @@ const FilesScreen = () => {
         renderItem={({ item }) => renderFilePreview(item)}
       />
 
-      <Modal
-        visible={isModalVisible}
-        transparent={true}
-        animationType="slide"
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Descripción</Text>
-            <TextInput
-              style={styles.descriptionInput}
-              placeholder="Escribe una descripción del archivo"
-              value={description}
-              onChangeText={setDescription}
-            />
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity 
-                style={styles.uploadButton} 
-                onPress={handleUpload} 
-                disabled={isUploading}
-              >
-                {isUploading ? (
-                  <ActivityIndicator size="small" color="#fff" />
-                ) : (
-                  <Text style={styles.uploadButtonText}>Subir Archivo</Text>
-                )}
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.cancelButton} 
-                onPress={() => setIsModalVisible(false)}
-              >
-                <Text style={styles.cancelButtonText}>Cancelar</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+<Modal
+  visible={isModalVisible}
+  transparent={true}
+  animationType="slide"
+>
+  <View style={styles.modalContainer}>
+    <View style={styles.modalContent}>
+      <Text style={styles.modalTitle}>Descripción</Text>
+      <TextInput
+        style={styles.descriptionInput}
+        placeholder="Escribe una descripción del archivo"
+        value={description}
+        onChangeText={setDescription}
+      />
+     <View style={[styles.buttonContainer, { flexDirection: 'row', justifyContent: 'space-between' }]}>
+  <TouchableOpacity 
+    style={styles.cancelButton} 
+    onPress={() => setIsModalVisible(false)}
+  >
+    <Text style={styles.cancelButtonText}>Cancelar</Text>
+  </TouchableOpacity>
+  <TouchableOpacity 
+    style={[styles.uploadButton, { marginLeft: 10 }]} 
+    onPress={handleUpload} 
+    disabled={isUploading}
+  >
+    {isUploading ? (
+      <ActivityIndicator size="small" color="#fff" />
+    ) : (
+      <Text style={styles.uploadButtonText}>Subir Archivo</Text>
+    )}
+  </TouchableOpacity>
+</View>
+
+    </View>
+  </View>
+</Modal>
     </View>
   );
 };

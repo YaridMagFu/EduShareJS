@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { View, TouchableOpacity, Text, Modal, Animated, Easing, ActivityIndicator, Alert } from 'react-native';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebase';
@@ -20,6 +20,7 @@ export default function HomeScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuAnimation] = useState(new Animated.Value(0));
+  const [iconScale] = useState(new Animated.Value(1)); 
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
@@ -75,6 +76,28 @@ export default function HomeScreen({ navigation }) {
       useNativeDriver: true,
       easing: Easing.ease,
     }).start();
+
+  //  animacion icono
+    startIconAnimation();
+  };
+
+  const startIconAnimation = () => {
+    setTimeout(() => {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(iconScale, {
+            toValue: 1.1,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+          Animated.timing(iconScale, {
+            toValue: 1,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    }, 5000);
   };
 
   const closeMenu = (callback) => {
@@ -137,7 +160,9 @@ export default function HomeScreen({ navigation }) {
                 closeMenu(() => navigation.navigate('Profile'));
               }}
             >
-              <Icon name="person" size={24} color="#000" />
+              <Animated.View style={{ transform: [{ scale: iconScale }] }}>
+                <Icon name="person" size={24} color="#000" />
+              </Animated.View>
               <Text style={styles.menuItemText}>Perfil de usuario</Text>
             </TouchableOpacity>
             <View style={styles.divider} />
@@ -147,7 +172,9 @@ export default function HomeScreen({ navigation }) {
                 closeMenu(() => navigation.navigate('Files'));
               }}
             >
-              <Icon name="folder" size={24} color="#000" />
+              <Animated.View style={{ transform: [{ scale: iconScale }] }}>
+                <Icon name="folder" size={24} color="#000" />
+              </Animated.View>
               <Text style={styles.menuItemText}>Archivos</Text>
             </TouchableOpacity>
             <View style={styles.divider} />
@@ -156,7 +183,9 @@ export default function HomeScreen({ navigation }) {
               onPress={handleLogout}
               disabled={isLoggingOut}
             >
-              <Icon name="log-out" size={24} color="#000" />
+              <Animated.View style={{ transform: [{ scale: iconScale }] }}>
+                <Icon name="log-out" size={24} color="#000" />
+              </Animated.View>
               <Text style={styles.menuItemText}>
                 {isLoggingOut ? 'Cerrando sesión...' : 'Cerrar sesión'}
               </Text>
