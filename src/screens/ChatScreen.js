@@ -1,12 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { Text, View, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Modal, Animated, Easing, ActivityIndicator } from 'react-native';
-import { collection, addDoc, query, orderBy, onSnapshot, doc, onSnapshot as onUserSnapshot } from 'firebase/firestore';
+import React, { useState, useEffect, useRef } from 'react';
+import { Text, View, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Modal, Animated, Easing, ActivityIndicator, Alert } from 'react-native';
+import { collection, addDoc, query, orderBy, onSnapshot, doc, deleteDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import MessageItem from '../components/MessageItem';
 import Icon from 'react-native-vector-icons/Ionicons'; 
 import styles from './ChatScreenStyles';
 import Filter from 'bad-words-es'; 
-
 
 const salvadoranBadWords = [
   "pendejos", "hijo de puta", "cabrón", "mierda", "verga", 
@@ -27,9 +26,11 @@ export default function ChatScreen({ route, navigation }) {
   const [menuAnimation] = useState(new Animated.Value(0));
   const [loading, setLoading] = useState(true);
   const [displayName, setDisplayName] = useState(auth.currentUser.displayName || 'Usuario Anónimo');
+  const [replyTo, setReplyTo] = useState(null);
+  const flatListRef = useRef(null); // Para referenciar el FlatList
 
   useEffect(() => {
-    const unsubscribeUser = onUserSnapshot(doc(db, 'users', auth.currentUser.uid), (doc) => {
+    const unsubscribeUser = onSnapshot(doc(db, 'users', auth.currentUser.uid), (doc) => {
       if (doc.exists()) {
         setDisplayName(doc.data().name);
       }
@@ -64,13 +65,57 @@ export default function ChatScreen({ route, navigation }) {
     
     console.log("Enviando mensaje:", cleanMessage);
     const { uid } = auth.currentUser;
-    await addDoc(collection(db, `chats/${chatRoom}/messages`), {
+    const messageData = {
       text: cleanMessage,
       createdAt: new Date(),
       uid,
       displayName,
-    });
+    };
+
+    if (replyTo) {
+      messageData.replyTo = {
+        id: replyTo.id,
+        text: replyTo.text,
+        displayName: replyTo.displayName,
+      };
+    }
+
+    await addDoc(collection(db, `chats/${chatRoom}/messages`), messageData);
     setNewMessage('');
+    setReplyTo(null);
+  };
+
+  const deleteMessage = async (messageId) => {
+    Alert.alert(
+      "Eliminar mensaje",
+      "¿Estás seguro de que quieres eliminar este mensaje?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        { 
+          text: "Eliminar", 
+          onPress: async () => {
+            try {
+              await deleteDoc(doc(db, `chats/${chatRoom}/messages`, messageId));
+              console.log("Mensaje eliminado con éxito");
+            } catch (error) {
+              console.error("Error al eliminar el mensaje:", error);
+              Alert.alert("Error", "No se pudo eliminar el mensaje");
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const replyToMessage = (message) => {
+    setReplyTo(message);
+  };
+
+  const handleSelectReply = (replyMessage) => {
+    const index = messages.findIndex(msg => msg.id === replyMessage.id);
+    if (index !== -1 && flatListRef.current) {
+      flatListRef.current.scrollToIndex({ index, animated: true });
+    }
   };
 
   const openMenu = () => {
@@ -144,17 +189,30 @@ export default function ChatScreen({ route, navigation }) {
 
         <View style={styles.messagesBox}>
           <FlatList
+            ref={flatListRef} // Referencia al FlatList
             data={messages}
             renderItem={({ item }) => (
               <MessageItem 
                 message={item} 
                 isOwnMessage={item.uid === auth.currentUser.uid}
+                onDelete={() => deleteMessage(item.id)}
+                onReply={() => replyToMessage(item)}
+                onSelectReply={handleSelectReply} // Pasar la función de selección
               />
             )}
             keyExtractor={(item) => item.id}
             inverted
           />
         </View>
+
+        {replyTo && (
+          <View style={styles.replyContainer}>
+            <Text style={styles.replyText}>Respondiendo a: {replyTo.displayName}</Text>
+            <TouchableOpacity onPress={() => setReplyTo(null)}>
+              <Icon name="close" size={24} color="#000" />
+            </TouchableOpacity>
+          </View>
+        )}
 
         <View style={styles.inputContainer}>
           <TextInput
@@ -193,7 +251,7 @@ export default function ChatScreen({ route, navigation }) {
                 closeMenu(() => navigation.navigate('Files'));
               }}
             >
-              <Icon name="folder" size={24} color="#000" />
+                            <Icon name="folder" size={24} color="#000" />
               <Text style={styles.menuItemText}>Archivos</Text>
             </TouchableOpacity>
             <View style={styles.divider} />
