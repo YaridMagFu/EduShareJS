@@ -105,7 +105,10 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontWeight: 'bold',
   },
-  
+  iconContainer: {
+    justifyContent: 'center',
+    alignItems: 'center', // Alinear el contenido en el centro
+  },
 });
 
 export default styles;

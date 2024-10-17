@@ -4,6 +4,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { doc, setDoc, collection, getDocs, getDoc, deleteDoc } from 'firebase/firestore';
 import { auth, storage, db } from '../firebase';
+import { MaterialIcons } from '@expo/vector-icons'; 
 import styles from './FileScreenStyles';
 
 const FilesScreen = () => {
@@ -112,16 +113,13 @@ const FilesScreen = () => {
       setIsUploading(false);
     }
   };
-  // crud
+
   const deleteFile = async (file) => {
     try {
-  
       const fileRef = ref(storage, `files/${file.name}`);
       await deleteObject(fileRef);
 
-      
       await deleteDoc(doc(db, 'files', file.name));
-
 
       setFiles(prevFiles => prevFiles.filter(item => item.name !== file.name));
 
@@ -131,52 +129,81 @@ const FilesScreen = () => {
       Alert.alert('Error', 'Hubo un problema al eliminar el archivo');
     }
   };
+ 
+const renderFilePreview = (item) => {
+  const isImage = item.name.endsWith('.png') || item.name.endsWith('.jpg') || item.name.endsWith('.jpeg');
+  const isPdf = item.name.endsWith('.pdf');
+  const isVideo = item.name.endsWith('.mp4') || item.name.endsWith('.mov');
+  const isAudio = item.name.endsWith('.mp3') || item.name.endsWith('.wav') || item.name.endsWith('.aac');
+  const isWord = item.name.endsWith('.doc') || item.name.endsWith('.docx');
+  const isPowerPoint = item.name.endsWith('.ppt') || item.name.endsWith('.pptx');
+  const isText = item.name.endsWith('.txt');
+  const isZip = item.name.endsWith('.zip');
+  const isCsv = item.name.endsWith('.csv');
 
-  const renderFilePreview = (item) => {
-    const isImage = item.name.endsWith('.png') || item.name.endsWith('.jpg') || item.name.endsWith('.jpeg');
-  
-    const handleDelete = async () => {
-      Alert.alert(
-        'Confirmación',
-        '¿Estás seguro de que deseas eliminar este archivo?',
-        [
-          { text: 'Cancelar', style: 'cancel' },
-          {
-            text: 'Eliminar',
-            onPress: () => deleteFile(item),
-          },
-        ]
-      );
-    };
-  
-    return (
-      <View style={styles.card}>
-        <Text style={styles.description}>{item.description}</Text>
+  const handleDelete = async () => {
+    Alert.alert(
+      'Confirmación',
+      '¿Estás seguro de que deseas eliminar este archivo?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          onPress: () => deleteFile(item),
+        },
+      ]
+    );
+  };
+
+  return (
+    <View style={styles.card}>
+      <Text style={styles.description}>{item.description}</Text>
+      
+      {/* Contenedor para centrar el contenido */}
+      <View style={styles.iconContainer}>
         {isImage ? (
           <Image source={{ uri: item.url }} style={styles.imagePreview} />
+        ) : isPdf ? (
+          <MaterialIcons name="picture-as-pdf" size={100} color="red" />
+        ) : isVideo ? (
+          <MaterialIcons name="videocam" size={100} color="blue" />
+        ) : isAudio ? (
+          <MaterialIcons name="audiotrack" size={100} color="green" />
+        ) : isWord ? (
+          <MaterialIcons name="description" size={100} color="purple" />
+        ) : isPowerPoint ? (
+          <MaterialIcons name="slideshow" size={100} color="orange" />
+        ) : isText ? (
+          <MaterialIcons name="text_snippet" size={100} color="blue" />
+        ) : isZip ? (
+          <MaterialIcons name="archive" size={100} color="brown" />
+        ) : isCsv ? (
+          <MaterialIcons name="table_chart" size={100} color="grey" />
         ) : (
           <Text style={styles.fileName}>Vista previa no disponible para {item.name}</Text>
         )}
-        <Text style={styles.uploadedBy}>Subido por: {item.uploadedBy}</Text>
-        <TouchableOpacity 
-          style={styles.openButton} 
-          onPress={() => Linking.openURL(item.url)}
-        >
-          <Text style={styles.openButtonText}>Abrir archivo</Text>
-        </TouchableOpacity>
-  
-       {/* boton eliminar solo si es maestro */}
-        {isDocente && (
-          <TouchableOpacity 
-            style={styles.deleteButton} 
-            onPress={handleDelete}
-          >
-            <Text style={styles.deleteButtonText}>Eliminar</Text>
-          </TouchableOpacity>
-        )}
       </View>
-    );
-  };
+
+      <Text style={styles.uploadedBy}>Subido por: {item.uploadedBy}</Text>
+
+      <TouchableOpacity 
+        style={styles.openButton} 
+        onPress={() => Linking.openURL(item.url)}
+      >
+        <Text style={styles.openButtonText}>Abrir archivo</Text>
+      </TouchableOpacity>
+
+      {isDocente && (
+        <TouchableOpacity 
+          style={styles.deleteButton} 
+          onPress={handleDelete}
+        >
+          <Text style={styles.deleteButtonText}>Eliminar</Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+};  
 
   return (
     <View style={{ flex: 1, padding: 20 }}>
@@ -189,43 +216,42 @@ const FilesScreen = () => {
         renderItem={({ item }) => renderFilePreview(item)}
       />
 
-<Modal
-  visible={isModalVisible}
-  transparent={true}
-  animationType="slide"
->
-  <View style={styles.modalContainer}>
-    <View style={styles.modalContent}>
-      <Text style={styles.modalTitle}>Descripción</Text>
-      <TextInput
-        style={styles.descriptionInput}
-        placeholder="Escribe una descripción del archivo"
-        value={description}
-        onChangeText={setDescription}
-      />
-     <View style={[styles.buttonContainer, { flexDirection: 'row', justifyContent: 'space-between' }]}>
-  <TouchableOpacity 
-    style={styles.cancelButton} 
-    onPress={() => setIsModalVisible(false)}
-  >
-    <Text style={styles.cancelButtonText}>Cancelar</Text>
-  </TouchableOpacity>
-  <TouchableOpacity 
-    style={[styles.uploadButton, { marginLeft: 10 }]} 
-    onPress={handleUpload} 
-    disabled={isUploading}
-  >
-    {isUploading ? (
-      <ActivityIndicator size="small" color="#fff" />
-    ) : (
-      <Text style={styles.uploadButtonText}>Subir Archivo</Text>
-    )}
-  </TouchableOpacity>
-</View>
-
-    </View>
-  </View>
-</Modal>
+      <Modal
+        visible={isModalVisible}
+        transparent={true}
+        animationType="slide"
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Descripción</Text>
+            <TextInput
+              style={styles.descriptionInput}
+              placeholder="Escribe una descripción del archivo"
+              value={description}
+              onChangeText={setDescription}
+            />
+            <View style={[styles.buttonContainer, { flexDirection: 'row', justifyContent: 'space-between' }]}>
+              <TouchableOpacity 
+                style={styles.cancelButton} 
+                onPress={() => setIsModalVisible(false)}
+              >
+                <Text style={styles.cancelButtonText}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.uploadButton, { marginLeft: 10 }]} 
+                onPress={handleUpload} 
+                disabled={isUploading}
+              >
+                {isUploading ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.uploadButtonText}>Subir Archivo</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };

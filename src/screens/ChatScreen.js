@@ -12,7 +12,8 @@ const salvadoranBadWords = [
   "pendejos", "hijo de puta", "cabrón", "mierda", "verga", 
   "chucho", "cagada", "picha", "culero", "pendejada", 
   "coño", "maricón", "huevón", "fregón", "pichón", 
-  "asqueroso", "pedorro", "puto", "malparido","maje","CTM"
+  "asqueroso", "pedorro", "puto", "malparido","maje","CTM","pinches","mierdas",
+  "cerote","pija"
 ];
 
 const filter = new Filter();
