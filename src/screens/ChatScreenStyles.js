@@ -118,6 +118,19 @@ const styles = StyleSheet.create({
     marginBottom: 5,
     marginTop: 20,
   },
+  scrollToTopButton: {
+    position: 'absolute',
+    top: 40,
+    right: 20,
+    backgroundColor: '#fff',
+    borderRadius: 25,
+    padding: 10,
+    elevation: 5, // Sombra para Android
+    shadowColor: '#000', // Sombra para iOS
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+  },
 });
 
 export default styles;

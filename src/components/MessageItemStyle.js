@@ -58,6 +58,9 @@ const styles = StyleSheet.create({
     actionButton: {
         marginLeft: 10,
     },
+    highlightedMessage: {
+        backgroundColor: 'yellow',
+      },
 });
 
 export default styles;

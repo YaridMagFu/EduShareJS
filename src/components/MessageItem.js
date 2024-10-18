@@ -3,9 +3,15 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import styles from './MessageItemStyle';
 
-export default function MessageItem({ message, isOwnMessage, onDelete, onReply, onSelectReply }) {
+export default function MessageItem({ message, isOwnMessage, onDelete, onReply, onSelectReply, highlightedMessageId }) {
   return (
-    <View style={[styles.messageContainer, isOwnMessage ? styles.ownMessage : styles.otherMessage]}>
+    <View
+      style={[
+        styles.messageContainer,
+        isOwnMessage ? styles.ownMessage : styles.otherMessage,
+        message.id === highlightedMessageId && styles.highlightedMessage,
+      ]}
+    >
       <Text style={styles.userName}>{message.displayName}</Text>
 
       {message.replyTo && (

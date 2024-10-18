@@ -28,6 +28,8 @@ export default function ChatScreen({ route, navigation }) {
   const [displayName, setDisplayName] = useState(auth.currentUser.displayName || 'Usuario Anónimo');
   const [replyTo, setReplyTo] = useState(null);
   const flatListRef = useRef(null); 
+  const [highlightedMessageId, setHighlightedMessageId] = useState(null);
+  const [atTop, setAtTop] = useState(false);
 
   useEffect(() => {
     const unsubscribeUser = onSnapshot(doc(db, 'users', auth.currentUser.uid), (doc) => {
@@ -115,6 +117,19 @@ export default function ChatScreen({ route, navigation }) {
     const index = messages.findIndex(msg => msg.id === replyMessage.id);
     if (index !== -1 && flatListRef.current) {
       flatListRef.current.scrollToIndex({ index, animated: true });
+      setHighlightedMessageId(replyMessage.id);
+      setTimeout(() => setHighlightedMessageId(null), 2000);
+    }
+  };
+
+  const toggleScrollPosition = () => {
+    if (flatListRef.current) {
+      if (atTop) {
+        flatListRef.current.scrollToEnd({ animated: true });
+      } else {
+        flatListRef.current.scrollToOffset({ offset: 0, animated: true });
+      }
+      setAtTop(!atTop);
     }
   };
 
@@ -137,22 +152,6 @@ export default function ChatScreen({ route, navigation }) {
     }).start(() => {
       setMenuVisible(false);
       if (callback) callback();
-    });
-  };
-
-  const handleLogout = () => {
-    closeMenu(() => {
-      auth.signOut()
-        .then(() => {
-          console.log('Sesión cerrada');
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'Login' }],
-          });
-        })
-        .catch((error) => {
-          console.error('Error al cerrar sesión: ', error);
-        });
     });
   };
 
@@ -198,10 +197,15 @@ export default function ChatScreen({ route, navigation }) {
                 onDelete={() => deleteMessage(item.id)}
                 onReply={() => replyToMessage(item)}
                 onSelectReply={handleSelectReply} 
+                highlightedMessageId={highlightedMessageId}
               />
             )}
             keyExtractor={(item) => item.id}
             inverted
+            onScroll={(event) => {
+              const { y } = event.nativeEvent.contentOffset;
+              setAtTop(y <= 0);
+            }}
           />
         </View>
 
@@ -225,6 +229,13 @@ export default function ChatScreen({ route, navigation }) {
             <Icon name="send" size={24} color="#6BA8CE" />
           </TouchableOpacity>
         </View>
+
+        <TouchableOpacity
+          style={styles.scrollToTopButton}
+          onPress={toggleScrollPosition}
+        >
+          <Icon name={atTop ? "arrow-up" : "arrow-down"} size={24} color="#000" />
+        </TouchableOpacity>
       </View>
 
       <Modal
@@ -233,39 +244,36 @@ export default function ChatScreen({ route, navigation }) {
         onRequestClose={() => closeMenu()}
         animationType="none"
       >
-        <View style={styles.modalOverlay}>
-          <Animated.View style={[styles.modalMenu, { opacity: menuOpacity, transform: [{ scale: menuScale }] }]}>
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => {
-                closeMenu(() => navigation.navigate('Profile'));
-              }}
-            >
-              <Icon name="person" size={24} color="#000" />
-              <Text style={styles.menuItemText}>Perfil de usuario</Text>
-            </TouchableOpacity>
-            <View style={styles.divider} />
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => {
-                closeMenu(() => navigation.navigate('Files'));
-              }}
-            >
-                            <Icon name="folder" size={24} color="#000" />
-              <Text style={styles.menuItemText}>Archivos</Text>
-            </TouchableOpacity>
-            <View style={styles.divider} />
-            <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
-              <Icon name="log-out" size={24} color="#000" />
-              <Text style={styles.menuItemText}>Cerrar sesión</Text>
-            </TouchableOpacity>
-            <View style={styles.divider} />
-            <TouchableOpacity style={styles.closeButton} onPress={() => closeMenu()}>
-              <Text style={styles.closeButtonText}>Cerrar Menú</Text>
-            </TouchableOpacity>
-          </Animated.View>
-        </View>
-      </Modal>
-    </KeyboardAvoidingView>
-  );
+            <View style={styles.modalOverlay}>
+              <Animated.View style={[styles.modalMenu, { opacity: menuOpacity, transform: [{ scale: menuScale }] }]}>
+                <TouchableOpacity
+                  style={styles.menuItem}
+                  onPress={() => {
+                    closeMenu(() => navigation.navigate('Profile'));
+                  }}
+                >
+                  <Icon name="person" size={24} color="#000" />
+                  <Text style={styles.menuItemText}>Perfil de usuario</Text>
+                </TouchableOpacity>
+                <View style={styles.divider} />
+                <TouchableOpacity
+                  style={styles.menuItem}
+                  onPress={() => {
+                    closeMenu(() => navigation.navigate('Files'));
+                  }}
+                >
+                  <Icon name="folder" size={24} color="#000" />
+                  <Text style={styles.menuItemText}>Archivos</Text>
+                </TouchableOpacity>
+                <View style={styles.divider} />
+                <TouchableOpacity style={styles.closeButton} onPress={() => closeMenu()}>
+                  <Text style={styles.closeButtonText}>Cerrar Menú</Text>
+                </TouchableOpacity>
+              </Animated.View>
+            </View>
+          </Modal>
+        </KeyboardAvoidingView>
+      );
 }
+
+      
