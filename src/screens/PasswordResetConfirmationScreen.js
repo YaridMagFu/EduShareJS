@@ -5,7 +5,7 @@ import styles from './PasswordResetConfirmationStyles';
 export default function PasswordResetConfirmationScreen({ navigation }) {
   return (
     <View style={styles.container}>
-      {/* Card para el título y el icono de chequeo */}
+      {/* título e icono de chequeo */}
       <View style={styles.titleCard}>
         <Text style={styles.title}>
           Su solicitud de recuperación de contraseña ha sido exitosa, verifique su buzón de entrada.
@@ -15,7 +15,7 @@ export default function PasswordResetConfirmationScreen({ navigation }) {
         </View>
       </View>
 
-      {/* Card para instrucciones */}
+    {/* instruciones */}
       <View style={styles.instructionsCard}>
         <Text style={styles.instructionsTitle}>Indicaciones</Text>
         <Text style={styles.instructions}>
@@ -27,7 +27,6 @@ export default function PasswordResetConfirmationScreen({ navigation }) {
       {/* Línea divisoria */}
       <View style={styles.divider} />
 
-      {/* Enlace para volver a la pantalla de inicio */}
       <TouchableOpacity onPress={() => navigation.navigate('Login')} style={styles.linkContainer}>
         <Text style={styles.linkText}>
           Haz click aquí para acceder a la pantalla de inicio.

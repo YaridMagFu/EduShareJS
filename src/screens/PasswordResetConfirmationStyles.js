@@ -4,7 +4,7 @@ export default StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: '#ffffff', // Color de fondo blanco
+    backgroundColor: '#ffffff', 
     justifyContent: 'center',
   },
   titleCard: {

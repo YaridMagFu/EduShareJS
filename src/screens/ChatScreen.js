@@ -27,7 +27,7 @@ export default function ChatScreen({ route, navigation }) {
   const [loading, setLoading] = useState(true);
   const [displayName, setDisplayName] = useState(auth.currentUser.displayName || 'Usuario Anónimo');
   const [replyTo, setReplyTo] = useState(null);
-  const flatListRef = useRef(null); // Para referenciar el FlatList
+  const flatListRef = useRef(null); 
 
   useEffect(() => {
     const unsubscribeUser = onSnapshot(doc(db, 'users', auth.currentUser.uid), (doc) => {
@@ -189,7 +189,7 @@ export default function ChatScreen({ route, navigation }) {
 
         <View style={styles.messagesBox}>
           <FlatList
-            ref={flatListRef} // Referencia al FlatList
+            ref={flatListRef} 
             data={messages}
             renderItem={({ item }) => (
               <MessageItem 
@@ -197,7 +197,7 @@ export default function ChatScreen({ route, navigation }) {
                 isOwnMessage={item.uid === auth.currentUser.uid}
                 onDelete={() => deleteMessage(item.id)}
                 onReply={() => replyToMessage(item)}
-                onSelectReply={handleSelectReply} // Pasar la función de selección
+                onSelectReply={handleSelectReply} 
               />
             )}
             keyExtractor={(item) => item.id}

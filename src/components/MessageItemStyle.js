@@ -29,22 +29,22 @@ const styles = StyleSheet.create({
         marginTop: 2,
     },
     replyInfo: {
-        backgroundColor: '#E1F5FE', // Color similar a WhatsApp
+        backgroundColor: '#E1F5FE',
         padding: 5,
         borderRadius: 8,
         marginBottom: 5,
-        borderColor: '#BBDEFB', // Añadir un borde para más estilo
+        borderColor: '#BBDEFB', 
         borderWidth: 1,
     },
     replyText: {
         fontSize: 12,
         fontWeight: 'bold',
-        color: '#000', // Color del texto de respuesta
+        color: '#000', 
     },
     replyName: {
         fontSize: 12,
         fontStyle: 'italic',
-        color: '#007AFF', // Color azul para el nombre del usuario
+        color: '#007AFF', 
     },
     replyContent: {
         fontSize: 12,

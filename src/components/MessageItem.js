@@ -8,7 +8,6 @@ export default function MessageItem({ message, isOwnMessage, onDelete, onReply, 
     <View style={[styles.messageContainer, isOwnMessage ? styles.ownMessage : styles.otherMessage]}>
       <Text style={styles.userName}>{message.displayName}</Text>
 
-      {/* Si el mensaje es una respuesta */}
       {message.replyTo && (
         <TouchableOpacity onPress={() => onSelectReply(message.replyTo)} style={styles.replyContainer}>
           <View style={styles.replyInfo}>
@@ -22,7 +21,6 @@ export default function MessageItem({ message, isOwnMessage, onDelete, onReply, 
       <Text style={styles.messageText}>{message.text}</Text>
       <Text style={styles.timestamp}>{message.createdAt.toDate().toLocaleString()}</Text>
 
-      {/* Botones de acción */}
       <View style={styles.messageActions}>
         <TouchableOpacity onPress={onReply} style={styles.actionButton}>
           <Icon name="return-up-back" size={20} color="#6BA8CE" />
