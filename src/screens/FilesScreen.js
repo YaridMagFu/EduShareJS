@@ -7,6 +7,7 @@ import { auth, storage, db } from '../firebase';
 import { MaterialIcons } from '@expo/vector-icons';
 import styles from './FileScreenStyles';
 
+//archivos logica 
 const FilesScreen = () => {
   const [files, setFiles] = useState([]);
   const [description, setDescription] = useState('');
