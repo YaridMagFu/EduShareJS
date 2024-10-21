@@ -12,7 +12,7 @@ const salvadoranBadWords = [
   "chucho", "cagada", "picha", "culero", "pendejada", 
   "coño", "maricón", "huevón", "fregón", "pichón", 
   "asqueroso", "pedorro", "puto", "malparido","maje","CTM","pinches","mierdas",
-  "cerote","pija"
+  "cerote","pija","cuca","WTF","Fuck","follar","pendejas"
 ];
 
 const filter = new Filter();

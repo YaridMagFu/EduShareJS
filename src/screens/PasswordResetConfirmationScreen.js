@@ -5,7 +5,6 @@ import styles from './PasswordResetConfirmationStyles';
 export default function PasswordResetConfirmationScreen({ navigation }) {
   return (
     <View style={styles.container}>
-      {/* título e icono de chequeo */}
       <View style={styles.titleCard}>
         <Text style={styles.title}>
           Su solicitud de recuperación de contraseña ha sido exitosa, verifique su buzón de entrada.
@@ -14,8 +13,6 @@ export default function PasswordResetConfirmationScreen({ navigation }) {
           <Text style={styles.checkIcon}>✔️</Text>
         </View>
       </View>
-
-    {/* instruciones */}
       <View style={styles.instructionsCard}>
         <Text style={styles.instructionsTitle}>Indicaciones</Text>
         <Text style={styles.instructions}>
@@ -23,8 +20,6 @@ export default function PasswordResetConfirmationScreen({ navigation }) {
           y que su bandeja de entrada no tenga filtros que bloqueen el mensaje.
         </Text>
       </View>
-
-      {/* Línea divisoria */}
       <View style={styles.divider} />
 
       <TouchableOpacity onPress={() => navigation.navigate('Login')} style={styles.linkContainer}>
