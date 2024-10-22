@@ -1,5 +1,3 @@
-import { StyleSheet } from 'react-native';
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -67,7 +65,23 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-  
+  readMoreLink: {
+    color: "blue",
+    fontWeight:"bold"
+  }, 
+  termsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'white', 
+    borderRadius: 15,
+    borderWidth: 2
+  },
+  switch: {
+    transform: [{ scaleX: 1 }, { scaleY: 1 }],
+  },
+  termsText: {
+    fontWeight: "bold"
+  }
 });
 
 export default styles;
