@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TextInput, Alert, Text, TouchableOpacity } from 'react-native';
+import { View, TextInput, Alert, Text, TouchableOpacity, Switch } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { setDoc, doc } from 'firebase/firestore';
@@ -13,9 +13,15 @@ export default function RegisterScreen({ route, navigation }) {
   const [password, setPassword] = useState('');
   const [year, setYear] = useState('');
   const [code, setCode] = useState('');
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   const handleRegister = async () => {
     try {
+      if (!termsAccepted) {
+        Alert.alert('Error', 'Debes aceptar los términos y condiciones para registrarte.');
+        return;
+      }
+
       if (role === 'docente' && code !== 'JS009') {
         Alert.alert('Error', 'Código de docente incorrecto');
         return;
@@ -34,6 +40,10 @@ export default function RegisterScreen({ route, navigation }) {
     } catch (error) {
       Alert.alert('Error', error.message);
     }
+  };
+
+  const handleReadTerms = () => {
+    navigation.navigate('Terms');
   };
 
   return (
@@ -103,6 +113,20 @@ export default function RegisterScreen({ route, navigation }) {
             />
           </>
         )}
+
+        <View style={styles.termsContainer}>
+          <Switch
+            value={termsAccepted}
+            onValueChange={setTermsAccepted}
+            style={styles.switch}
+          />
+          <Text style={styles.termsText}>
+            Acepto los términos y condiciones
+          </Text>
+        </View>
+        <TouchableOpacity onPress={handleReadTerms}>
+          <Text style={styles.readMoreLink}>Leer más</Text>
+        </TouchableOpacity>
 
         <TouchableOpacity style={styles.button} onPress={handleRegister}>
           <Text style={styles.buttonText}>Registrarse</Text>
